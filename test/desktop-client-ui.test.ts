@@ -49,7 +49,6 @@ describe('DSH Desktop client slot occupants', () => {
       type,
       props: { ...props, children }
     })
-    const BrandWordmark = vi.fn()
     const FishLogo = vi.fn()
     const plugin = definition!.factory((id) => {
       if (id === 'react') {
@@ -60,7 +59,7 @@ describe('DSH Desktop client slot occupants', () => {
         }
       }
       if (id === '@deepseek-ai/dsh-client-ui-primitives') {
-        return { BrandWordmark, FishLogo }
+        return { FishLogo }
       }
       throw new Error(`Unexpected client dependency: ${id}`)
     })
@@ -95,14 +94,20 @@ describe('DSH Desktop client slot occupants', () => {
     const sidebarName = registrations.find(
       ({ config }) => config.name === 'sidebar.brand.name'
     )!.component({}) as { type: unknown; props: Record<string, unknown> }
-    expect(sidebarName.type).toBe(BrandWordmark)
-    expect(sidebarName.props.includeMark).toBe(false)
+    expect(sidebarName.type).toBe('span')
+    expect(sidebarName.props.className).toBe('dshDesktopBrandName')
+    expect(sidebarName.props.children).toEqual(['开明通智'])
 
     const sidebarMark = registrations.find(
       ({ config }) => config.name === 'sidebar.brand.mark'
-    )!.component({ size: 24 }) as { type: unknown; props: Record<string, unknown> }
-    expect(sidebarMark.type).toBe('svg')
-    expect(sidebarMark.props.height).toBe(17)
+    )!.component({ size: 24 }) as {
+      type: unknown
+      props: Record<string, unknown> & { children: Array<{ type: unknown; props: Record<string, unknown> }> }
+    }
+    expect(sidebarMark.type).toBe('span')
+    expect(sidebarMark.props.className).toBe('dshDesktopBrandMark')
+    expect(sidebarMark.props.children[0]?.type).toBe('img')
+    expect(sidebarMark.props.children[0]?.props.src).toBe('/dsh-desktop-brand-mark.png')
 
     const heroMark = registrations.find(
       ({ config }) => config.name === 'conversation.hero.brand.mark'

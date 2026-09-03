@@ -6,10 +6,9 @@ window.__ModuleLoader__.load({
     Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
 
     const React = require('react')
-    const { BrandWordmark, FishLogo } = require('@deepseek-ai/dsh-client-ui-primitives')
+    const { FishLogo } = require('@deepseek-ai/dsh-client-ui-primitives')
 
-    const LIGHT_LOGO_URL = '/dsh-desktop-logo-light.png'
-    const DARK_LOGO_URL = '/dsh-desktop-logo-dark.png'
+    const BRAND_MARK_URL = '/dsh-desktop-brand-mark.png'
     const STYLE_ID = 'dsh-desktop-client-ui-style'
 
     function installStyles() {
@@ -18,47 +17,27 @@ window.__ModuleLoader__.load({
       style.id = STYLE_ID
       style.dataset.plugin = 'dsh-desktop-client-ui'
       style.textContent = `
-        .dshDesktopBrandDark{display:none}
-        body[data-ds-dark-theme] .dshDesktopBrandLight{display:none}
-        body[data-ds-dark-theme] .dshDesktopBrandDark{display:block}
+        .dshDesktopBrandName{font-size:18px;font-weight:600;line-height:1;white-space:nowrap;color:currentColor}
+        .dshDesktopBrandMark{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:24px;height:24px}
+        .dshDesktopBrandMarkImage{width:100%;height:100%;object-fit:contain;display:block}
       `
       document.head.appendChild(style)
     }
 
     function DesktopBrandMark() {
-      const height = 17
       return React.createElement(
-        'svg',
-        {
-          width: height * 1030 / 590,
-          height,
-          viewBox: '150 330 1030 590',
-          fill: 'none',
-          'aria-hidden': 'true'
-        },
-        React.createElement('image', {
-          className: 'dshDesktopBrandLight',
-          href: LIGHT_LOGO_URL,
-          x: 150,
-          y: 330,
-          width: 1030,
-          height: 590,
-          preserveAspectRatio: 'xMidYMid meet'
-        }),
-        React.createElement('image', {
-          className: 'dshDesktopBrandDark',
-          href: DARK_LOGO_URL,
-          x: 150,
-          y: 330,
-          width: 1030,
-          height: 590,
-          preserveAspectRatio: 'xMidYMid meet'
+        'span',
+        { className: 'dshDesktopBrandMark', 'aria-hidden': 'true' },
+        React.createElement('img', {
+          className: 'dshDesktopBrandMarkImage',
+          src: BRAND_MARK_URL,
+          alt: ''
         })
       )
     }
 
     function DesktopBrandName() {
-      return React.createElement(BrandWordmark, { includeMark: false })
+      return React.createElement('span', { className: 'dshDesktopBrandName' }, '开明通智')
     }
 
     function ConversationBrandMark(props) {
