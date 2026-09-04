@@ -391,15 +391,15 @@ export class LanMobileBridge {
         : transportAddress
     const url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`)
 
-    if (request.method === 'GET' && url.pathname.startsWith('/brand-logo/')) {
+    if (request.method === 'GET' && (url.pathname === '/brand-lockup' || url.pathname.startsWith('/brand-logo/'))) {
       const variant = url.pathname === '/brand-logo/dark' ? 'dark' : 'light'
-      const path = this.options.brandLogoPaths?.[variant]
+      const path = this.options.brandLogoPaths?.[variant] ?? this.options.brandLogoPaths?.light
       if (!path) return this.text(response, 404, 'Brand asset not found.')
       try {
         const body = await readFile(path)
         response.statusCode = 200
         response.setHeader('content-type', 'image/png')
-        response.setHeader('cache-control', 'public, max-age=3600')
+        response.setHeader('cache-control', 'no-store')
         response.end(body)
       } catch {
         this.text(response, 404, 'Brand asset not found.')

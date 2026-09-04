@@ -24,6 +24,16 @@ describe('DSH Desktop sidebar branding', () => {
     expect(main).toContain("height: '24px'")
   })
 
+  it('uses the 智枢 lockup on native windows and mobile pairing pages', async () => {
+    const main = await readFile(path.join(projectRoot, 'src', 'main', 'index.ts'), 'utf8')
+    expect(main).toContain("desktopResourcePath('logo-icon.png')")
+    expect(main).toContain("desktopResourcePath('logo.png')")
+    expect(main).not.toContain('dsh-desktop-logo-${variant}.png')
+    expect(main).not.toContain("join(app.getAppPath(), 'build', 'app-icon.png')")
+    expect(main).toContain('tray.setToolTip(name)')
+    expect(main).not.toContain("tray.setToolTip('DSH Desktop')")
+  })
+
   it('fills the stock brand slots instead of replacing Sidebar structure', async () => {
     const [patch, client, composition, installedSidebar] = await Promise.all([
       readFile(patchPath('@deepseek-ai/dsh-client-ui-sidebar'), 'utf8'),
@@ -45,10 +55,21 @@ describe('DSH Desktop sidebar branding', () => {
     expect(client).toContain("ctx.slots.inject('sidebar.brand.mark'")
     expect(client).toContain("ctx.slots.inject('sidebar.brand.name'")
     expect(client).toContain("ctx.slots.inject('conversation.hero.brand.mark'")
-    expect(client).toContain("React.createElement('span', { className: 'dshDesktopBrandName' }, '开明通智')")
+    expect(client).toContain('/dsh-desktop-brand-lockup.png')
     expect(client).toContain('/dsh-desktop-brand-mark.png')
-    expect(client).not.toContain('background:var(--dsw-alias-bg-layer-1,#ffffff)')
-    expect(client).not.toContain('body[data-ds-dark-theme] .dshDesktopBrandMark')
+    expect(client).toContain("HERO_MARK_URL = '/zhishu-hero.webp'")
+    expect(client).toContain("HERO_LOOP_URL = '/zhishu-hero-loop.webp'")
+    expect(client).toContain('onMouseEnter')
+    expect(client).toContain('onMouseLeave')
+    expect(client).toContain('dshDesktopBrandLockup')
+    expect(client).toContain('dshDesktopHeroBrandMark')
+    expect(client).toContain('dshDesktopHeroBrandDot')
+    expect(client).toContain('body[data-ds-dark-theme] .dshDesktopHeroBrandDot{background:#fff}')
+    expect(client).toContain('height:32px')
+    expect(client).toContain('object-fit:contain')
+    expect(client).toContain('animation:none!important')
+    expect(client).not.toContain('开明通智')
+    expect(client).not.toContain('FishLogo')
     expect(client).not.toContain('/dsh-desktop-logo-light.png')
     expect(client).not.toContain('/dsh-desktop-logo-dark.png')
     expect(client).not.toContain('translateX')
@@ -120,8 +141,14 @@ describe('DSH Desktop sidebar branding', () => {
     expect(installer).toContain("'dsh-desktop-logo-light.png'")
     expect(installer).toContain("'build', 'logo-dark.png'")
     expect(installer).toContain("'dsh-desktop-logo-dark.png'")
-    expect(installer).toContain("'build', 'oa-logo.png'")
+    expect(installer).toContain("'build', 'logo.png'")
+    expect(installer).toContain("'dsh-desktop-brand-lockup.png'")
+    expect(installer).toContain("'build', 'logo-mark.png'")
     expect(installer).toContain("'dsh-desktop-brand-mark.png'")
+    expect(installer).toContain("'build', 'zhishu-hero.webp'")
+    expect(installer).toContain("'zhishu-hero.webp'")
+    expect(installer).toContain("'build', 'zhishu-hero-loop.webp'")
+    expect(installer).toContain("'zhishu-hero-loop.webp'")
     expect(installer).toContain('<link rel="icon" type="image/png" href="/dsh-desktop-logo.png" />')
     // The manifest is edited as JSON now rather than as a pinned multi-line
     // string: 0.1.2-alpha.1 added "purpose": "any" to the icon entry, which no

@@ -20,7 +20,7 @@ describe('LAN mobile page', () => {
     expect(html).toContain('prefers-color-scheme:dark')
     expect(html).toContain('content="#ffffff" media="(prefers-color-scheme:light)"')
     expect(html).toContain('content="#141416" media="(prefers-color-scheme:dark)"')
-    expect(html).toContain('/brand-logo/light')
+    expect(html).toContain('/brand-lockup')
     expect(html).not.toContain('id="chatTitle"')
     expect(html).toContain('body.chat-open header{display:none}')
     expect(html).toContain('body.chat-open .shell{padding:env(safe-area-inset-top) 14px 0}')
@@ -188,8 +188,7 @@ describe('LAN mobile page', () => {
     expect(tunnelZh).not.toContain('连接到同一 Wi-Fi')
     for (const html of [zh, en]) {
       expect(html).toContain('prefers-color-scheme:dark')
-      expect(html).toContain('/brand-logo/light')
-      expect(html).toContain('/brand-logo/dark')
+      expect(html).toContain('/brand-lockup')
     }
   })
 
@@ -203,7 +202,7 @@ describe('LAN mobile page', () => {
     })
     const phone = renderPairingWaitPage('pairing-id', 'en')
     for (const html of [desktop, phone]) {
-      expect(html).toContain('/brand-logo/light')
+      expect(html).toContain('/brand-lockup')
       for (const script of [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(
         (match) => match[1]!
       ))
@@ -215,8 +214,13 @@ describe('LAN mobile page', () => {
     expect(desktop).toContain('--request-bg:#fbf6f3')
     expect(desktop).not.toContain('--request-bg:#f5f7ff')
     expect(desktop).toContain('prefers-color-scheme:dark')
-    expect(desktop).toContain('/brand-logo/dark')
+    expect(desktop).toContain('/brand-lockup')
     expect(desktop).toContain('--bg:#141416')
+    expect(desktop).toContain('height:36px;width:auto;max-width:200px;object-fit:contain')
+    expect(desktop).not.toContain('<span>DSH Desktop</span>')
+    expect(desktop).not.toContain('width:39px;height:22px')
+    expect(phone).toContain('class="brand"')
+    expect(phone).not.toContain('class="logo"')
     expect(desktop).toContain('.qr{display:inline-flex;background:#fff')
     expect(desktop).toContain('Creating a global network link')
     expect(desktop).toContain('Switching to WiFi connection mode')
@@ -261,7 +265,7 @@ describe('LAN mobile page', () => {
     expect(phone).toContain('prefers-color-scheme:dark')
     expect(phone).toContain('--brand:#4d6bfe')
     expect(phone).toContain('--bg:#141416')
-    expect(phone).toContain('/brand-logo/dark')
+    expect(phone).toContain('/brand-lockup')
     expect(phone).toContain('background:var(--panel)')
     expect(phone).toContain('content="#141416" media="(prefers-color-scheme:dark)"')
     expect(phone).toContain('id="retry" class="retry"')

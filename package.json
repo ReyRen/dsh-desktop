@@ -310,6 +310,7 @@
       "zh-TW",
       "zh_TW"
     ],
+    "electronDist": "node_modules/electron/dist",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -343,12 +344,20 @@
         "to": "splash.html"
       },
       {
-        "from": "build/dsh-loader.gif",
-        "to": "dsh-loader.gif"
+        "from": "build/zhishu.gif",
+        "to": "zhishu.gif"
       },
       {
-        "from": "build/dsh-loader-dark.gif",
-        "to": "dsh-loader-dark.gif"
+        "from": "build/logo.png",
+        "to": "logo.png"
+      },
+      {
+        "from": "build/logo-mark.png",
+        "to": "logo-mark.png"
+      },
+      {
+        "from": "build/logo-icon.png",
+        "to": "logo-icon.png"
       },
       {
         "from": "build/plugin-recovery.html",

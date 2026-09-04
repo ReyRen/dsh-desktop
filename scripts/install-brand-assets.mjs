@@ -6,7 +6,10 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const source = path.join(projectRoot, 'build', 'icon.png')
 const lightSource = path.join(projectRoot, 'build', 'logo-light.png')
 const darkSource = path.join(projectRoot, 'build', 'logo-dark.png')
-const brandMarkSource = path.join(projectRoot, 'build', 'oa-logo.png')
+const brandLockupSource = path.join(projectRoot, 'build', 'logo.png')
+const brandMarkSource = path.join(projectRoot, 'build', 'logo-mark.png')
+const heroMarkDisplaySource = path.join(projectRoot, 'build', 'zhishu-hero.webp')
+const heroLoopDisplaySource = path.join(projectRoot, 'build', 'zhishu-hero-loop.webp')
 const destinationDirectory = path.join(
   projectRoot,
   'node_modules',
@@ -17,7 +20,10 @@ const destinationDirectory = path.join(
 const destination = path.join(destinationDirectory, 'dsh-desktop-logo.png')
 const lightDestination = path.join(destinationDirectory, 'dsh-desktop-logo-light.png')
 const darkDestination = path.join(destinationDirectory, 'dsh-desktop-logo-dark.png')
+const brandLockupDestination = path.join(destinationDirectory, 'dsh-desktop-brand-lockup.png')
 const brandMarkDestination = path.join(destinationDirectory, 'dsh-desktop-brand-mark.png')
+const heroMarkDisplayDestination = path.join(destinationDirectory, 'zhishu-hero.webp')
+const heroLoopDisplayDestination = path.join(destinationDirectory, 'zhishu-hero-loop.webp')
 const indexPath = path.join(destinationDirectory, 'index.html')
 const manifestPath = path.join(destinationDirectory, 'manifest.webmanifest')
 
@@ -72,7 +78,10 @@ await mkdir(destinationDirectory, { recursive: true })
 await copyFile(source, destination)
 await copyFile(lightSource, lightDestination)
 await copyFile(darkSource, darkDestination)
+await copyFile(brandLockupSource, brandLockupDestination)
 await copyFile(brandMarkSource, brandMarkDestination)
+await copyFile(heroMarkDisplaySource, heroMarkDisplayDestination)
+await copyFile(heroLoopDisplaySource, heroLoopDisplayDestination)
 
 const index = await readFile(indexPath, 'utf8')
 await writeFile(indexPath, replaceIconLink(index, path.relative(projectRoot, indexPath)))
@@ -87,5 +96,8 @@ console.log(`Installed DSH Desktop brand assets: ${[
   destination,
   lightDestination,
   darkDestination,
-  brandMarkDestination
+  brandLockupDestination,
+  brandMarkDestination,
+  heroMarkDisplayDestination,
+  heroLoopDisplayDestination
 ].map((file) => path.relative(projectRoot, file)).join(', ')}`)

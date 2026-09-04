@@ -49,7 +49,6 @@ describe('DSH Desktop client slot occupants', () => {
       type,
       props: { ...props, children }
     })
-    const FishLogo = vi.fn()
     const plugin = definition!.factory((id) => {
       if (id === 'react') {
         return {
@@ -57,9 +56,6 @@ describe('DSH Desktop client slot occupants', () => {
           useEffect: (effect: () => void | (() => void)) => effect(),
           useState: (initial: unknown) => [initial, vi.fn()]
         }
-      }
-      if (id === '@deepseek-ai/dsh-client-ui-primitives') {
-        return { FishLogo }
       }
       throw new Error(`Unexpected client dependency: ${id}`)
     })
@@ -94,25 +90,35 @@ describe('DSH Desktop client slot occupants', () => {
     const sidebarName = registrations.find(
       ({ config }) => config.name === 'sidebar.brand.name'
     )!.component({}) as { type: unknown; props: Record<string, unknown> }
-    expect(sidebarName.type).toBe('span')
-    expect(sidebarName.props.className).toBe('dshDesktopBrandName')
-    expect(sidebarName.props.children).toEqual(['开明通智'])
+    expect(sidebarName.type).toBe('img')
+    expect(sidebarName.props.className).toBe('dshDesktopBrandLockup')
+    expect(sidebarName.props.src).toBe('/dsh-desktop-brand-lockup.png')
 
     const sidebarMark = registrations.find(
       ({ config }) => config.name === 'sidebar.brand.mark'
-    )!.component({ size: 24 }) as {
-      type: unknown
-      props: Record<string, unknown> & { children: Array<{ type: unknown; props: Record<string, unknown> }> }
-    }
-    expect(sidebarMark.type).toBe('span')
-    expect(sidebarMark.props.className).toBe('dshDesktopBrandMark')
-    expect(sidebarMark.props.children[0]?.type).toBe('img')
-    expect(sidebarMark.props.children[0]?.props.src).toBe('/dsh-desktop-brand-mark.png')
+    )!.component({ size: 24 }) as { type: unknown; props: Record<string, unknown> }
+    expect(sidebarMark.type).toBe('img')
+    expect(sidebarMark.props.className).toBe('dshDesktopBrandMarkImage')
+    expect(sidebarMark.props.src).toBe('/dsh-desktop-brand-mark.png')
 
     const heroMark = registrations.find(
       ({ config }) => config.name === 'conversation.hero.brand.mark'
-    )!.component({ size: 48 }) as { type: unknown; props: Record<string, unknown> }
-    expect(heroMark.type).toBe(FishLogo)
-    expect(heroMark.props.size).toBe(48)
+    )!.component({ size: 48, className: 'hero-fish' }) as {
+      type: unknown
+      props: Record<string, unknown>
+    }
+    expect(heroMark.type).toBe('span')
+    expect(heroMark.props.className).toBe('dshDesktopHeroBrand')
+    const [heroImage, heroDot] = heroMark.props.children as Array<{
+      type: unknown
+      props: Record<string, unknown>
+    }>
+    expect(heroImage.type).toBe('img')
+    expect(heroImage.props.src).toBe('/zhishu-hero.webp')
+    expect(heroImage.props.className).toBe('dshDesktopHeroBrandMark')
+    expect(typeof heroImage.props.onMouseEnter).toBe('function')
+    expect(typeof heroImage.props.onMouseLeave).toBe('function')
+    expect(heroDot.type).toBe('span')
+    expect(heroDot.props.className).toBe('dshDesktopHeroBrandDot')
   })
 })

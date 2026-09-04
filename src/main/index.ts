@@ -473,14 +473,27 @@ function attachWindowsMenuView(window: BrowserWindow): void {
   }).catch(showUnexpectedError)
 }
 
+function desktopDisplayName(): string {
+  try {
+    const metadata = JSON.parse(
+      readFileSync(join(app.getAppPath(), 'package.json'), 'utf8')
+    ) as { productName?: unknown }
+    if (typeof metadata.productName === 'string' && metadata.productName.trim()) {
+      return metadata.productName
+    }
+  } catch {
+    // Unpackaged and packaged builds both ship a package.json next to the app.
+  }
+  return developmentBuild ? 'ZhiShu Desktop Dev' : 'DSH Desktop'
+}
+
 function configureAppIdentity(): void {
+  app.setName(desktopDisplayName())
   if (developmentBuild) {
-    app.setName('DSH Desktop Dev')
     app.setPath('userData', join(app.getPath('appData'), 'dsh-desktop-dev'))
     return
   }
 
-  app.setName('DSH Desktop')
   // Keep the historical lowercase directory stable across product-name and
   // branding changes. Harness stores workspaces, sessions, credentials, and
   // custom presets below userData, so deriving this path from app.getName()
@@ -584,20 +597,13 @@ function desktopResourcePath(name: string): string {
 }
 
 function desktopIconPath(): string {
-  return app.isPackaged
-    ? join(process.resourcesPath, 'icon.png')
-    : join(app.getAppPath(), 'build', 'app-icon.png')
+  // Square canvas containing the full wide mark. Windows stretches non-square
+  // PNGs in the title-bar / tray slot.
+  return desktopResourcePath('logo-icon.png')
 }
 
-function dshBrandLogoPath(variant: 'light' | 'dark'): string {
-  return join(
-    app.getAppPath(),
-    'node_modules',
-    '@deepseek-ai',
-    'dsh-web-frontend',
-    'dist',
-    `dsh-desktop-logo-${variant}.png`
-  )
+function dshBrandLogoPath(_variant: 'light' | 'dark'): string {
+  return desktopResourcePath('logo.png')
 }
 
 function harnessLocale(): 'en' | 'zh' {
@@ -873,11 +879,12 @@ function ensureTray(): void {
   if (process.platform !== 'win32' || tray) return
 
   const locale = harnessLocale()
+  const name = app.getName()
   tray = new Tray(desktopIconPath())
-  tray.setToolTip('DSH Desktop')
+  tray.setToolTip(name)
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      { label: locale === 'zh' ? '显示 DSH Desktop' : 'Show DSH Desktop', click: restoreMainWindow },
+      { label: locale === 'zh' ? `显示 ${name}` : `Show ${name}`, click: restoreMainWindow },
       { type: 'separator' },
       { label: locale === 'zh' ? '退出' : 'Exit', click: () => app.quit() }
     ])

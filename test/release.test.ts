@@ -143,6 +143,7 @@ describe('GitHub release contract', () => {
     ) as {
       build: {
         artifactName: string
+        electronDist?: string
         extraResources: Array<{ from: string; to: string }>
         win: { target: Array<{ target: string; arch: string[] }> }
         nsis: { artifactName: string; include: string }
@@ -150,6 +151,7 @@ describe('GitHub release contract', () => {
       }
     }
 
+    expect(packageJson.build.electronDist).toBe('node_modules/electron/dist')
     expect(packageJson.build.artifactName).toBe('dsh-desktop-${os}-${arch}.${ext}')
     expect(packageJson.build.extraResources).toContainEqual({
       from: 'build/app-icon.png',
@@ -164,12 +166,20 @@ describe('GitHub release contract', () => {
       to: 'splash.html'
     })
     expect(packageJson.build.extraResources).toContainEqual({
-      from: 'build/dsh-loader.gif',
-      to: 'dsh-loader.gif'
+      from: 'build/zhishu.gif',
+      to: 'zhishu.gif'
     })
     expect(packageJson.build.extraResources).toContainEqual({
-      from: 'build/dsh-loader-dark.gif',
-      to: 'dsh-loader-dark.gif'
+      from: 'build/logo.png',
+      to: 'logo.png'
+    })
+    expect(packageJson.build.extraResources).toContainEqual({
+      from: 'build/logo-mark.png',
+      to: 'logo-mark.png'
+    })
+    expect(packageJson.build.extraResources).toContainEqual({
+      from: 'build/logo-icon.png',
+      to: 'logo-icon.png'
     })
     expect(packageJson.build.extraResources).toContainEqual({
       from: 'build/dsh-desktop.patch.yml',
@@ -219,12 +229,16 @@ describe('GitHub release contract', () => {
     expect(main).toContain('await showSplash()')
     expect(main).toContain("query: { theme: nativeTheme.shouldUseDarkColors ? 'dark' : 'light' }")
     expect(main).toContain('nativeTheme.themeSource = harnessThemePreference()')
-    expect(splash).toContain('Starting DSH Desktop')
-    expect(splash).toContain('src="dsh-loader.gif"')
-    expect(splash).toContain('src="dsh-loader-dark.gif"')
+    expect(splash).toContain('Starting')
+    expect(splash).toContain("textContent = '正在启动'")
+    expect(splash).not.toContain('Starting DSH Desktop')
+    expect(splash).not.toContain('正在启动 DSH Desktop')
+    expect(splash).toContain('src="zhishu.gif"')
+    expect(splash).not.toContain('src="dsh-loader.gif"')
+    expect(splash).not.toContain('src="dsh-loader-dark.gif"')
     expect(splash).toContain("document.documentElement.dataset.theme = splashTheme === 'dark'")
     expect(splash).toContain(":root[data-theme='dark']")
-    expect(splash).toContain('brightness(2.4) saturate(0.72)')
+    expect(splash).not.toContain('brightness(2.4) saturate(0.72)')
     expect(splash).not.toContain('filter: invert(1)')
     expect(splash).not.toContain('class="track"')
     expect(splash).toContain('position: fixed;')

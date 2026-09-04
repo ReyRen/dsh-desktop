@@ -6,9 +6,11 @@ window.__ModuleLoader__.load({
     Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
 
     const React = require('react')
-    const { FishLogo } = require('@deepseek-ai/dsh-client-ui-primitives')
 
+    const BRAND_LOCKUP_URL = '/dsh-desktop-brand-lockup.png'
     const BRAND_MARK_URL = '/dsh-desktop-brand-mark.png'
+    const HERO_MARK_URL = '/zhishu-hero.webp'
+    const HERO_LOOP_URL = '/zhishu-hero-loop.webp'
     const STYLE_ID = 'dsh-desktop-client-ui-style'
 
     function installStyles() {
@@ -17,31 +19,55 @@ window.__ModuleLoader__.load({
       style.id = STYLE_ID
       style.dataset.plugin = 'dsh-desktop-client-ui'
       style.textContent = `
-        .dshDesktopBrandName{font-size:18px;font-weight:600;line-height:1;white-space:nowrap;color:currentColor}
-        .dshDesktopBrandMark{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:24px;height:24px}
-        .dshDesktopBrandMarkImage{width:100%;height:100%;object-fit:contain;display:block}
+        .dshDesktopBrandLockup{height:36px;width:auto;max-width:180px;object-fit:contain;display:block}
+        .dshDesktopBrandMarkImage{width:24px;height:24px;object-fit:contain;display:block}
+        .dshDesktopHeroBrand{display:inline-flex;align-items:center;gap:10px}
+        .dshDesktopHeroBrandMark{height:32px;width:auto;object-fit:contain;display:block;animation:none!important;transform:none!important;cursor:pointer}
+        .dshDesktopHeroBrandDot{width:8px;height:8px;border-radius:50%;background:#000;flex:none}
+        body[data-ds-dark-theme] .dshDesktopHeroBrandDot{background:#fff}
+        div:has(> span [data-slot="conversation.hero.brand.mark"]){grid-template-columns:auto auto auto!important;align-items:center!important}
+        span:has(> span [data-slot="sidebar.brand.name"]){height:32px!important}
+        span:has(+ span [data-slot="sidebar.brand.name"]){display:none!important}
       `
       document.head.appendChild(style)
     }
 
     function DesktopBrandMark() {
-      return React.createElement(
-        'span',
-        { className: 'dshDesktopBrandMark', 'aria-hidden': 'true' },
-        React.createElement('img', {
-          className: 'dshDesktopBrandMarkImage',
-          src: BRAND_MARK_URL,
-          alt: ''
-        })
-      )
+      return React.createElement('img', {
+        className: 'dshDesktopBrandMarkImage',
+        src: BRAND_MARK_URL,
+        alt: '',
+        'aria-hidden': 'true'
+      })
     }
 
     function DesktopBrandName() {
-      return React.createElement('span', { className: 'dshDesktopBrandName' }, '开明通智')
+      return React.createElement('img', {
+        className: 'dshDesktopBrandLockup',
+        src: BRAND_LOCKUP_URL,
+        alt: '',
+        'aria-hidden': 'true'
+      })
     }
 
-    function ConversationBrandMark(props) {
-      return React.createElement(FishLogo, props)
+    function ConversationBrandMark() {
+      const [src, setSrc] = React.useState(HERO_MARK_URL)
+      return React.createElement(
+        'span',
+        { className: 'dshDesktopHeroBrand' },
+        React.createElement('img', {
+          className: 'dshDesktopHeroBrandMark',
+          src,
+          alt: '',
+          'aria-hidden': 'true',
+          onMouseEnter: () => setSrc(HERO_LOOP_URL + '?play=' + Date.now()),
+          onMouseLeave: () => setSrc(HERO_MARK_URL)
+        }),
+        React.createElement('span', {
+          className: 'dshDesktopHeroBrandDot',
+          'aria-hidden': 'true'
+        })
+      )
     }
 
     const inject = ['slots']
