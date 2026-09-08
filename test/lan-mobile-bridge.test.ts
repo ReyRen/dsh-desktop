@@ -3,11 +3,13 @@ import { createServer, request as httpRequest, type IncomingMessage } from 'node
 import { createRequire } from 'node:module'
 import type { AddressInfo } from 'node:net'
 import type { Duplex } from 'node:stream'
+import type { NetworkInterfaceInfo } from 'node:os'
 import {
   isInternetTunnelHost,
   isPrivateAddress,
   LanMobileBridge,
-  normalizeRemoteAddress
+  normalizeRemoteAddress,
+  preferredLanAddress
 } from '../src/main/mobile/lan-mobile-bridge'
 
 const bridges: LanMobileBridge[] = []
@@ -28,6 +30,17 @@ const WebSocketServer = createRequire(import.meta.url)('ws').WebSocketServer as 
   noServer: boolean
 }) => TestWebSocketServer
 const webSocketServers: TestWebSocketServer[] = []
+
+function privateIpv4(address: string): NetworkInterfaceInfo {
+  return {
+    address,
+    netmask: '255.255.255.0',
+    family: 'IPv4',
+    mac: '00:00:00:00:00:00',
+    internal: false,
+    cidr: `${address}/24`
+  }
+}
 
 afterEach(async () => {
   await Promise.all(bridges.splice(0).map((bridge) => bridge.stop()))
@@ -57,6 +70,32 @@ describe('LAN mobile bridge address policy', () => {
     expect(isPrivateAddress('8.8.8.8')).toBe(false)
     expect(isPrivateAddress('172.15.0.1')).toBe(false)
     expect(isPrivateAddress('172.32.0.1')).toBe(false)
+  })
+
+  it('prefers WLAN over VPN virtual adapters such as aTrust', () => {
+    expect(
+      preferredLanAddress({
+        aTrustVNIC: [privateIpv4('10.7.2.49')],
+        WLAN: [privateIpv4('10.210.253.191')]
+      })
+    ).toBe('10.210.253.191')
+  })
+
+  it('prefers Ethernet when no Wi-Fi address is present', () => {
+    expect(
+      preferredLanAddress({
+        aTrustVNIC: [privateIpv4('10.7.2.49')],
+        以太网: [privateIpv4('192.168.1.20')]
+      })
+    ).toBe('192.168.1.20')
+  })
+
+  it('falls back to a virtual adapter when it is the only private address', () => {
+    expect(
+      preferredLanAddress({
+        aTrustVNIC: [privateIpv4('10.7.2.49')]
+      })
+    ).toBe('10.7.2.49')
   })
 
   it('normalizes IPv4-mapped IPv6 addresses', () => {

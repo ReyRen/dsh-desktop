@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
-import { networkInterfaces, tmpdir } from 'node:os'
+import { networkInterfaces, tmpdir, type NetworkInterfaceInfo } from 'node:os'
 import type { AddressInfo } from 'node:net'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -1297,13 +1297,46 @@ export function cookiePair(headers: readonly string[]): string | undefined {
   return undefined
 }
 
-export function preferredLanAddress(): string | undefined {
-  for (const entries of Object.values(networkInterfaces())) {
+/**
+ * Rank NICs for LAN pairing. Node lists adapters in an arbitrary order, so
+ * taking the first private IPv4 often returns a VPN/virtual address (aTrust,
+ * Hyper-V, WSL) that the phone cannot reach.
+ */
+function lanInterfaceRank(name: string): number {
+  const normalized = name.toLowerCase()
+  if (
+    /atrust|vnic|vpn|tap-?win|wintun|wireguard|zerotier|virtual|vmware|vbox|hyper-?v|vethernet|docker|wsl|npcap|loopback|bluetooth|蓝牙|本地连接\*|local area connection\*/u.test(
+      normalized
+    )
+  ) {
+    return -100
+  }
+  if (/wlan|wi-?fi|wireless|无线/u.test(normalized)) return 40
+  if (/ethernet|以太网/u.test(normalized)) return 20
+  return 0
+}
+
+function isIpv4Interface(entry: NetworkInterfaceInfo): boolean {
+  return entry.family === 'IPv4'
+}
+
+export function preferredLanAddress(
+  interfaces: NodeJS.Dict<NetworkInterfaceInfo[]> = networkInterfaces()
+): string | undefined {
+  const candidates: Array<{ address: string; rank: number }> = []
+  for (const [name, entries] of Object.entries(interfaces)) {
+    const rank = lanInterfaceRank(name)
     for (const entry of entries ?? []) {
-      if (entry.family === 'IPv4' && !entry.internal && isPrivateAddress(entry.address)) return entry.address
+      if (isIpv4Interface(entry) && !entry.internal && isPrivateAddress(entry.address)) {
+        candidates.push({ address: entry.address, rank })
+      }
     }
   }
-  return undefined
+  if (candidates.length === 0) return undefined
+  const reachable = candidates.filter((candidate) => candidate.rank >= 0)
+  const pool = reachable.length > 0 ? reachable : candidates
+  pool.sort((left, right) => right.rank - left.rank)
+  return pool[0]?.address
 }
 
 export function normalizeRemoteAddress(address: string): string {
