@@ -32,6 +32,19 @@ describe('DSH Desktop client slot occupants', () => {
       document,
       navigator: { language: 'en-US' },
       window: {
+        dshWorkspace: {
+          state: vi.fn(async () => ({
+            active: 'conversation',
+            locale: 'en',
+            dark: false
+          })),
+          switchTo: vi.fn(async (active: 'conversation' | 'business') => ({
+            active,
+            locale: 'en',
+            dark: false
+          })),
+          onStateChanged: vi.fn(() => () => undefined)
+        },
         __ModuleLoader__: {
           load: (value: typeof definition) => {
             definition = value
@@ -90,9 +103,18 @@ describe('DSH Desktop client slot occupants', () => {
     const sidebarName = registrations.find(
       ({ config }) => config.name === 'sidebar.brand.name'
     )!.component({}) as { type: unknown; props: Record<string, unknown> }
-    expect(sidebarName.type).toBe('img')
-    expect(sidebarName.props.className).toBe('dshDesktopBrandLockup')
-    expect(sidebarName.props.src).toBe('/dsh-desktop-brand-lockup.png')
+    expect(sidebarName.type).toBe('span')
+    expect(sidebarName.props.className).toBe('dshDesktopWorkspaceBrand')
+    const [brandImage, connector, trigger] = sidebarName.props.children as Array<{
+      type: unknown
+      props: Record<string, unknown>
+    }>
+    expect(brandImage!.type).toBe('img')
+    expect(brandImage!.props.className).toBe('dshDesktopBrandLockup')
+    expect(brandImage!.props.src).toBe('/dsh-desktop-brand-lockup.png')
+    expect(connector!.props.className).toBe('dshDesktopWorkspaceDot')
+    expect(trigger!.type).toBe('button')
+    expect(trigger!.props.className).toBe('dshDesktopWorkspaceTrigger')
 
     const sidebarMark = registrations.find(
       ({ config }) => config.name === 'sidebar.brand.mark'
@@ -113,12 +135,12 @@ describe('DSH Desktop client slot occupants', () => {
       type: unknown
       props: Record<string, unknown>
     }>
-    expect(heroImage.type).toBe('img')
-    expect(heroImage.props.src).toBe('/zhishu-hero.webp')
-    expect(heroImage.props.className).toBe('dshDesktopHeroBrandMark')
-    expect(typeof heroImage.props.onMouseEnter).toBe('function')
-    expect(typeof heroImage.props.onMouseLeave).toBe('function')
-    expect(heroDot.type).toBe('span')
-    expect(heroDot.props.className).toBe('dshDesktopHeroBrandDot')
+    expect(heroImage!.type).toBe('img')
+    expect(heroImage!.props.src).toBe('/zhishu-hero.webp')
+    expect(heroImage!.props.className).toBe('dshDesktopHeroBrandMark')
+    expect(typeof heroImage!.props.onMouseEnter).toBe('function')
+    expect(typeof heroImage!.props.onMouseLeave).toBe('function')
+    expect(heroDot!.type).toBe('span')
+    expect(heroDot!.props.className).toBe('dshDesktopHeroBrandDot')
   })
 })

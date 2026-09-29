@@ -14,7 +14,8 @@ import {
   utilityProcess,
   WebContentsView,
   type IpcMainInvokeEvent,
-  type MessageBoxOptions
+  type MessageBoxOptions,
+  type WebContents
 } from 'electron'
 import { extractFailureCause, HarnessRuntime } from './runtime/harness-runtime'
 import { launchDisclaimedUtilityProcess } from './runtime/disclaimed-utility-process'
@@ -129,6 +130,12 @@ import {
   MAIN_WINDOW_RECOVERY_RELOAD_COOLDOWN_MS,
   shouldReloadAfterMainWindowRendererLoss
 } from './main-window-recovery'
+import { workspaceContentBounds } from './workspace-view'
+import {
+  isDesktopWorkspace,
+  type DesktopWorkspace,
+  type DesktopWorkspaceState
+} from '../shared/workspace'
 
 type PluginRecoveryAction = 'uninstall' | 'show-log' | 'quit' | 'restart' | 'refresh' | 'safe-mode'
 type SafeModeAction =
@@ -153,6 +160,10 @@ let mainWindow: BrowserWindow | undefined
 let windowsMenuView: WebContentsView | undefined
 let windowsMenuOpen = false
 let windowsMenuDark = false
+let businessWorkspaceView: WebContentsView | undefined
+let activeWorkspace: DesktopWorkspace = 'conversation'
+let workspaceChromeVisible = false
+let workspaceDark = nativeTheme.shouldUseDarkColors
 let mobileWindow: BrowserWindow | undefined
 let tray: Tray | undefined
 let runtime: HarnessRuntime
@@ -407,7 +418,12 @@ function windowsTitleBarOverlay(isDark: boolean): Electron.TitleBarOverlayOption
 
 function applyWindowChromeTheme(window: BrowserWindow, isDark: boolean): void {
   if (window.isDestroyed()) return
+  workspaceDark = isDark
   window.setBackgroundColor(isDark ? '#141416' : '#ffffff')
+  if (businessWorkspaceView && !businessWorkspaceView.webContents.isDestroyed()) {
+    businessWorkspaceView.setBackgroundColor(isDark ? '#151517' : '#ffffff')
+  }
+  notifyWorkspaceState()
   if (process.platform === 'win32') {
     windowsMenuDark = isDark
     window.setTitleBarOverlay(windowsTitleBarOverlay(isDark))
@@ -415,6 +431,103 @@ function applyWindowChromeTheme(window: BrowserWindow, isDark: boolean): void {
       windowsMenuView.webContents.send('desktop-titlebar:theme-changed', isDark)
     }
   }
+}
+
+function workspaceState(): DesktopWorkspaceState {
+  return {
+    active: activeWorkspace,
+    locale: harnessLocale(),
+    dark: workspaceDark
+  }
+}
+
+function notifyWorkspaceState(): void {
+  const state = workspaceState()
+  if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+    mainWindow.webContents.send('workspace:state-changed', state)
+  }
+  if (businessWorkspaceView && !businessWorkspaceView.webContents.isDestroyed()) {
+    businessWorkspaceView.webContents.send('workspace:state-changed', state)
+  }
+}
+
+function updateWorkspaceViewBounds(window: BrowserWindow): void {
+  if (window.isDestroyed()) return
+  const [width = 0, height = 0] = window.getContentSize()
+  const contentSize = { width, height }
+  if (businessWorkspaceView && !businessWorkspaceView.webContents.isDestroyed()) {
+    businessWorkspaceView.setBounds(workspaceContentBounds(contentSize))
+  }
+}
+
+function syncWorkspaceVisibility(window: BrowserWindow): void {
+  if (window.isDestroyed()) return
+  const businessVisible = workspaceChromeVisible && activeWorkspace === 'business'
+  if (businessWorkspaceView && !businessWorkspaceView.webContents.isDestroyed()) {
+    businessWorkspaceView.setVisible(businessVisible)
+  }
+  updateWorkspaceViewBounds(window)
+}
+
+function setWorkspaceChromeVisible(window: BrowserWindow, visible: boolean): void {
+  workspaceChromeVisible = visible
+  syncWorkspaceVisibility(window)
+  notifyWorkspaceState()
+}
+
+function switchWorkspace(window: BrowserWindow, workspace: DesktopWorkspace): DesktopWorkspaceState {
+  activeWorkspace = workspace
+  syncWorkspaceVisibility(window)
+  notifyWorkspaceState()
+  return workspaceState()
+}
+
+async function loadBusinessRenderer(view: WebContentsView): Promise<void> {
+  const developmentUrl = process.env.ELECTRON_RENDERER_URL
+  if (developmentUrl) {
+    const baseUrl = developmentUrl.endsWith('/') ? developmentUrl : `${developmentUrl}/`
+    await view.webContents.loadURL(new URL('business/index.html', baseUrl).toString())
+    return
+  }
+  await view.webContents.loadFile(
+    join(import.meta.dirname, '../renderer/business/index.html')
+  )
+}
+
+function attachWorkspaceViews(window: BrowserWindow): void {
+  const businessView = new WebContentsView({
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      partition: 'persist:dsh-business',
+      preload: join(import.meta.dirname, '../preload/workspace-business.cjs'),
+      sandbox: true,
+      webSecurity: true
+    }
+  })
+  businessWorkspaceView = businessView
+  businessView.setBackgroundColor(workspaceDark ? '#151517' : '#ffffff')
+  businessView.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https://') || url.startsWith('http://')) void shell.openExternal(url)
+    return { action: 'deny' }
+  })
+  businessView.webContents.on('will-navigate', (event, targetUrl) => {
+    if (targetUrl === businessView.webContents.getURL()) return
+    event.preventDefault()
+    if (targetUrl.startsWith('https://') || targetUrl.startsWith('http://')) {
+      void shell.openExternal(targetUrl)
+    }
+  })
+  window.contentView.addChildView(businessView)
+  businessView.webContents.on('did-finish-load', notifyWorkspaceState)
+
+  const updateBounds = (): void => updateWorkspaceViewBounds(window)
+  window.on('resize', updateBounds)
+  window.on('enter-full-screen', updateBounds)
+  window.on('leave-full-screen', updateBounds)
+
+  syncWorkspaceVisibility(window)
+  void loadBusinessRenderer(businessView).catch(showUnexpectedError)
 }
 
 function updateWindowsMenuViewBounds(window: BrowserWindow): void {
@@ -946,6 +1059,11 @@ function createWindow(): BrowserWindow {
   installMainWindowRendererRecovery(window)
   window.on('closed', () => {
     if (mainWindow === window) mainWindow = undefined
+    if (businessWorkspaceView && !businessWorkspaceView.webContents.isDestroyed()) {
+      businessWorkspaceView.webContents.close()
+    }
+    businessWorkspaceView = undefined
+    workspaceChromeVisible = false
     if (windowsMenuView && !windowsMenuView.webContents.isDestroyed()) {
       windowsMenuView.webContents.close()
     }
@@ -955,6 +1073,7 @@ function createWindow(): BrowserWindow {
     resolveSafeModeAction({ type: 'quit' })
   })
   mainWindow = window
+  attachWorkspaceViews(window)
   if (isWindows) attachWindowsMenuView(window)
   return window
 }
@@ -997,6 +1116,7 @@ async function openHarness(
   markHarnessRendered()
   if (runtime.snapshot().url !== url || window.isDestroyed()) return
   await syncNativeTheme(window)
+  setWorkspaceChromeVisible(window, true)
   raiseWindowWithoutStealingFocus(
     window,
     process.platform,
@@ -1008,6 +1128,7 @@ async function openHarness(
 async function showSplash(): Promise<void> {
   clearProfileBootConfirmation()
   const window = mainWindow && !mainWindow.isDestroyed() ? mainWindow : createWindow()
+  setWorkspaceChromeVisible(window, false)
   const navigationVersion = ++mainWindowNavigationVersion
   window.webContents.stop()
   await window.loadFile(desktopResourcePath('splash.html'), {
@@ -1295,6 +1416,25 @@ async function uninstallMarketAndRestart(): Promise<{ ok: boolean }> {
 }
 
 function registerHarnessHandlers(): void {
+  ipcMain.removeHandler('workspace:get-state')
+  ipcMain.handle('workspace:get-state', (event) => {
+    assertTrustedWorkspaceClientEvent(event)
+    return workspaceState()
+  })
+
+  ipcMain.removeHandler('workspace:switch')
+  ipcMain.handle('workspace:switch', (event, workspace: unknown) => {
+    assertTrustedWorkspaceClientEvent(event)
+    if (!isDesktopWorkspace(workspace)) {
+      throw new Error('Unknown desktop workspace.')
+    }
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      throw new Error('The desktop window is unavailable.')
+    }
+    setWindowsMenuOpen(mainWindow, false, true)
+    return switchWorkspace(mainWindow, workspace)
+  })
+
   ipcMain.removeHandler('harness:restart')
   ipcMain.handle('harness:restart', async (event) => {
     if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents) {
@@ -1330,7 +1470,7 @@ function registerHarnessHandlers(): void {
   ipcMain.removeHandler('desktop-menu:get-zoom-factor')
   ipcMain.handle('desktop-menu:get-zoom-factor', (event) => {
     assertTrustedDesktopMenuEvent(event)
-    return { zoomFactor: mainWindow?.webContents.getZoomFactor() ?? 1 }
+    return { zoomFactor: activeWorkspaceContents()?.getZoomFactor() ?? 1 }
   })
 
   ipcMain.removeHandler('desktop-titlebar:set-menu-open')
@@ -1402,6 +1542,22 @@ function assertTrustedWindowsMenuEvent(event: IpcMainInvokeEvent): void {
   }
 }
 
+function assertTrustedWorkspaceClientEvent(event: IpcMainInvokeEvent): void {
+  const fromConversation =
+    mainWindow &&
+    !mainWindow.isDestroyed() &&
+    event.sender === mainWindow.webContents &&
+    event.senderFrame === mainWindow.webContents.mainFrame
+  const fromBusiness =
+    businessWorkspaceView &&
+    !businessWorkspaceView.webContents.isDestroyed() &&
+    event.sender === businessWorkspaceView.webContents &&
+    event.senderFrame === businessWorkspaceView.webContents.mainFrame
+  if (!fromConversation && !fromBusiness) {
+    throw new Error('This action is only available from a desktop workspace.')
+  }
+}
+
 function assertTrustedMainWindowEvent(event: IpcMainInvokeEvent): void {
   if (
     !mainWindow ||
@@ -1422,6 +1578,18 @@ function assertTrustedSafeModeManagerEvent(event: IpcMainInvokeEvent): void {
   ) {
     throw new Error('This action is only available from the Safe Mode manager.')
   }
+}
+
+function activeWorkspaceContents(): WebContents | undefined {
+  if (
+    activeWorkspace === 'business' &&
+    businessWorkspaceView &&
+    !businessWorkspaceView.webContents.isDestroyed()
+  ) {
+    return businessWorkspaceView.webContents
+  }
+  const window = mainWindow
+  return window && !window.isDestroyed() ? window.webContents : undefined
 }
 
 async function showAbout(window: BrowserWindow): Promise<void> {
@@ -1462,7 +1630,8 @@ async function showAbout(window: BrowserWindow): Promise<void> {
 async function executeDesktopMenuCommand(command: DesktopMenuCommand): Promise<number | undefined> {
   const window = mainWindow
   if (!window || window.isDestroyed()) return
-  const contents = window.webContents
+  const contents = activeWorkspaceContents()
+  if (!contents) return
 
   switch (command) {
     case 'connect-phone':
@@ -1542,6 +1711,7 @@ async function waitForPluginRecoveryAction(options: {
     pluginRecoveryActionResolver = resolve
   })
   const navigationVersion = ++mainWindowNavigationVersion
+  setWorkspaceChromeVisible(window, false)
   window.webContents.stop()
 
   try {

@@ -1,0 +1,441 @@
+:root {
+  color-scheme: light;
+  --biz-bg: #fff;
+  --biz-sidebar: #f7f8fa;
+  --biz-surface: #fff;
+  --biz-text: #20242b;
+  --biz-text-secondary: #535a65;
+  --biz-text-muted: #737982;
+  --biz-text-faint: #969ca5;
+  --biz-border: #e4e7ec;
+  --biz-sidebar-border: #e9ebef;
+  --biz-hover: rgba(32, 33, 36, 0.07);
+  --biz-nav-active: #e9ecf1;
+  --biz-accent: #326ee8;
+  --biz-accent-surface: #eef4ff;
+  --biz-glow: rgba(61, 120, 255, 0.08);
+  --biz-card: rgba(255, 255, 255, 0.9);
+  --biz-card-shadow: rgba(37, 50, 73, 0.06);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  color: var(--biz-text);
+  background: var(--biz-bg);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --biz-bg: #151517;
+  --biz-sidebar: #1c1c1f;
+  --biz-surface: #28282c;
+  --biz-text: #f2f3f5;
+  --biz-text-secondary: #c1c5cc;
+  --biz-text-muted: #a4a8b0;
+  --biz-text-faint: #7e838c;
+  --biz-border: #34363b;
+  --biz-sidebar-border: #2b2d31;
+  --biz-hover: rgba(255, 255, 255, 0.08);
+  --biz-nav-active: #2a2c31;
+  --biz-accent: #79a2ff;
+  --biz-accent-surface: rgba(75, 125, 235, 0.18);
+  --biz-glow: rgba(70, 118, 232, 0.12);
+  --biz-card: rgba(35, 36, 40, 0.92);
+  --biz-card-shadow: rgba(0, 0, 0, 0.24);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+button {
+  font: inherit;
+}
+
+.business-layout {
+  --sidebar-width: 260px;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  background: var(--biz-bg);
+}
+
+.business-layout.collapsed {
+  --sidebar-width: 56px;
+}
+
+.business-sidebar {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 12px 16px;
+  background: var(--biz-sidebar);
+  border-right: 1px solid var(--biz-sidebar-border);
+  overflow: visible;
+}
+
+.business-layout.collapsed .business-sidebar {
+  padding: 18px 10px 6px;
+  align-items: center;
+}
+
+.logo-row {
+  box-sizing: border-box;
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  height: 60px;
+  margin-bottom: 8px;
+  padding: 8px 0 8px 4px;
+  overflow: visible;
+}
+
+.business-layout.collapsed .logo-row {
+  justify-content: flex-start;
+  height: 36px;
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.sidebar-toggle {
+  appearance: none;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  color: var(--biz-text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.sidebar-toggle:hover {
+  background: var(--biz-hover);
+}
+
+.business-layout.collapsed .sidebar-toggle {
+  width: 36px;
+  height: 36px;
+  color: var(--biz-text);
+}
+
+.panel-icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+
+.business-layout.collapsed .panel-icon {
+  display: none;
+  width: 18px;
+  height: 18px;
+}
+
+.business-layout.collapsed .sidebar-toggle:hover .panel-icon {
+  display: inline;
+}
+
+.rail-mark {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
+
+.business-layout.collapsed .sidebar-toggle:hover .rail-mark {
+  display: none;
+}
+
+.business-workspace-switcher {
+  position: relative;
+  min-width: 0;
+  height: 36px;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  overflow: visible;
+}
+
+.brand-lockup {
+  height: 36px;
+  width: auto;
+  max-width: 180px;
+  object-fit: contain;
+  display: block;
+  flex: none;
+}
+
+.workspace-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--biz-text-muted);
+  flex: none;
+}
+
+.workspace-trigger {
+  appearance: none;
+  min-width: 0;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 3px;
+  color: var(--biz-text);
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.workspace-trigger:hover,
+.workspace-trigger[aria-expanded="true"] {
+  background: var(--biz-hover);
+}
+
+.workspace-trigger svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 120ms ease;
+}
+
+.workspace-trigger[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.workspace-menu {
+  position: absolute;
+  z-index: 20;
+  top: 38px;
+  left: 0;
+  width: 248px;
+  padding: 7px;
+  background: var(--biz-surface);
+  border: 1px solid var(--biz-border);
+  border-radius: 13px;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.18);
+}
+
+.workspace-option {
+  appearance: none;
+  width: 100%;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  color: var(--biz-text);
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.workspace-option:hover,
+.workspace-option.active {
+  background: var(--biz-hover);
+}
+
+.workspace-option > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.workspace-option strong {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.workspace-option small {
+  color: var(--biz-text-muted);
+  font-size: 12px;
+  line-height: 17px;
+  white-space: nowrap;
+}
+
+.workspace-check {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.business-sidebar nav {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item {
+  width: 100%;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  color: var(--biz-text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.business-layout.collapsed .nav-item {
+  width: 36px;
+  height: 36px;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.nav-item:hover,
+.nav-item.active {
+  color: var(--biz-text);
+  background: var(--biz-nav-active);
+}
+
+.nav-icon {
+  width: 20px;
+  flex: none;
+  text-align: center;
+}
+
+.nav-label {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.business-layout.collapsed .nav-label {
+  display: none;
+}
+
+.migration-note {
+  margin: auto 8px 0;
+  color: var(--biz-text-faint);
+  font-size: 12px;
+}
+
+.business-main {
+  overflow: auto;
+  padding: 86px clamp(32px, 6vw, 88px) 48px;
+  background:
+    radial-gradient(circle at 88% 8%, var(--biz-glow), transparent 28%),
+    var(--biz-bg);
+}
+
+.business-main header {
+  max-width: 720px;
+}
+
+.eyebrow {
+  color: var(--biz-accent);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+h1 {
+  margin: 12px 0 10px;
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.16;
+  letter-spacing: -0.035em;
+}
+
+header p {
+  margin: 0;
+  color: var(--biz-text-muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.module-grid {
+  max-width: 920px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 46px;
+}
+
+.module-card {
+  min-height: 176px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 22px;
+  background: var(--biz-card);
+  border: 1px solid var(--biz-border);
+  border-radius: 16px;
+  box-shadow: 0 10px 28px var(--biz-card-shadow);
+}
+
+.module-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: var(--biz-accent);
+  background: var(--biz-accent-surface);
+  border-radius: 10px;
+  font-size: 18px;
+}
+
+.module-card h2 {
+  margin: 22px 0 6px;
+  font-size: 17px;
+}
+
+.module-card p {
+  margin: 0;
+  color: var(--biz-text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+@media (max-width: 880px) {
+  .business-layout:not(.collapsed) {
+    --sidebar-width: 200px;
+  }
+
+  .module-grid {
+    grid-template-columns: 1fr;
+  }
+}

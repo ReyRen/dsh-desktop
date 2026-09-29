@@ -9,6 +9,7 @@ import {
 import { isPluginLoadError } from './plugin-error-view'
 import { findBootFailureText } from './boot-failure'
 import { mountWindowsTitlebarLayout } from './windows-titlebar'
+import type { DesktopWorkspace, DesktopWorkspaceState } from '../shared/workspace'
 
 const ROOT_ID = 'dsh-desktop-update-root'
 const MOBILE_BUTTON_ID = 'dsh-desktop-mobile-button'
@@ -345,6 +346,22 @@ window.addEventListener('pagehide', () => {
   if (rendererHealthHeartbeat !== undefined) window.clearInterval(rendererHealthHeartbeat)
   rendererHealthHeartbeat = undefined
 })
+
+contextBridge.exposeInMainWorld(
+  'dshWorkspace',
+  Object.freeze({
+    state: (): Promise<DesktopWorkspaceState> => ipcRenderer.invoke('workspace:get-state'),
+    switchTo: (workspace: DesktopWorkspace): Promise<DesktopWorkspaceState> =>
+      ipcRenderer.invoke('workspace:switch', workspace),
+    onStateChanged: (listener: (state: DesktopWorkspaceState) => void): (() => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, state: DesktopWorkspaceState): void => {
+        listener(state)
+      }
+      ipcRenderer.on('workspace:state-changed', handler)
+      return () => ipcRenderer.removeListener('workspace:state-changed', handler)
+    }
+  })
+)
 
 contextBridge.exposeInMainWorld(
   'dshDesktop',
